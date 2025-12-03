@@ -26,7 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         DOMElements: {
             // ... (您的 DOM 元素列表保持不变)
-            statStudentCount: document.getElementById('stat-student-count'), statGroupCount: document.getElementById('stat-group-count'), statTotalPoints: document.getElementById('stat-total-points'), statAvgPoints: document.getElementById('stat-avg-points'), navItems: document.querySelectorAll('.nav-item'), views: document.querySelectorAll('#main-content > div'), studentCardsContainer: document.getElementById('student-cards-container'), studentTableBody: document.querySelector('#student-table tbody'), studentTableHeader: document.querySelector('#student-table thead'), groupTableBody: document.querySelector('#group-table tbody'), recordTableBody: document.querySelector('#record-table tbody'), rewardsContainer: document.getElementById('rewards-container'), leaderboardList: document.getElementById('leaderboard-list'), leaderboardTitle: document.getElementById('leaderboard-title'), leaderboardToggle: document.querySelector('.leaderboard-toggle'), studentModal: document.getElementById('student-modal'), studentForm: document.getElementById('student-form'), studentModalTitle: document.getElementById('student-modal-title'), studentIdInput: document.getElementById('student-id'), studentIdDisplayInput: document.getElementById('student-id-display'), studentNameInput: document.getElementById('student-name'), studentGroupSelect: document.getElementById('student-group'), groupModal: document.getElementById('group-modal'), groupForm: document.getElementById('group-form'), groupIdInput: document.getElementById('group-id'), groupNameInput: document.getElementById('group-name'), rewardModal: document.getElementById('reward-modal'), rewardForm: document.getElementById('reward-form'), rewardModalTitle: document.getElementById('reward-modal-title'), rewardIdInput: document.getElementById('reward-id'), rewardNameInput: document.getElementById('reward-name'), rewardCostInput: document.getElementById('reward-cost'), redeemModal: document.getElementById('redeem-modal'), redeemForm: document.getElementById('redeem-form'), redeemRewardIdInput: document.getElementById('redeem-reward-id'), redeemRewardName: document.getElementById('redeem-reward-name'), redeemRewardCost: document.getElementById('redeem-reward-cost'), redeemStudentSelect: document.getElementById('redeem-student-select'), groupPointsModal: document.getElementById('group-points-modal'), groupPointsForm: document.getElementById('group-points-form'), groupPointsSelect: document.getElementById('group-points-select'), groupPointsAmount: document.getElementById('group-points-amount'), groupPointsReason: document.getElementById('group-points-reason'), pointsModal: document.getElementById('points-modal'), pointsForm: document.getElementById('points-form'), pointsStudentName: document.getElementById('points-student-name'), pointsStudentIdInput: document.getElementById('points-student-id-input'), pointsChangeAmount: document.getElementById('points-change-amount'), pointsChangeReason: document.getElementById('points-change-reason'),
+            statStudentCount: document.getElementById('stat-student-count'), statGroupCount: document.getElementById('stat-group-count'), statTotalPoints: document.getElementById('stat-total-points'), statAvgPoints: document.getElementById('stat-avg-points'), navItems: document.querySelectorAll('.nav-item'), views: document.querySelectorAll('#main-content > div'), studentCardsContainer: document.getElementById('student-cards-container'), studentTableBody: document.querySelector('#student-table tbody'), studentTableHeader: document.querySelector('#student-table thead'), groupTableBody: document.querySelector('#group-table tbody'), recordTableBody: document.querySelector('#record-table tbody'), rewardsContainer: document.getElementById('rewards-container'), leaderboardList: document.getElementById('leaderboard-list'), leaderboardTitle: document.getElementById('leaderboard-title'), leaderboardToggle: document.querySelector('.leaderboard-toggle'), studentModal: document.getElementById('student-modal'), studentForm: document.getElementById('student-form'), studentModalTitle: document.getElementById('student-modal-title'), studentIdInput: document.getElementById('student-id'), studentIdDisplayInput: document.getElementById('student-id-display'), studentNameInput: document.getElementById('student-name'), studentGroupSelect: document.getElementById('student-group'), groupModal: document.getElementById('group-modal'), groupForm: document.getElementById('group-form'), groupIdInput: document.getElementById('group-id'), groupNameInput: document.getElementById('group-name'), rewardModal: document.getElementById('reward-modal'), rewardForm: document.getElementById('reward-form'), rewardModalTitle: document.getElementById('reward-modal-title'), rewardIdInput: document.getElementById('reward-id'), rewardNameInput: document.getElementById('reward-name'), rewardCostInput: document.getElementById('reward-cost'), redeemModal: document.getElementById('redeem-modal'), redeemForm: document.getElementById('redeem-form'), redeemRewardIdInput: document.getElementById('redeem-reward-id'), redeemRewardName: document.getElementById('redeem-reward-name'), redeemRewardCost: document.getElementById('redeem-reward-cost'), redeemStudentCheckboxContainer: document.getElementById('redeem-student-checkbox-container'),
+            btnRedeemSelectAll: document.getElementById('btn-redeem-select-all'),
+            btnRedeemDeselectAll: document.getElementById('btn-redeem-deselect-all'), groupPointsModal: document.getElementById('group-points-modal'), groupPointsForm: document.getElementById('group-points-form'), groupPointsSelect: document.getElementById('group-points-select'), groupPointsAmount: document.getElementById('group-points-amount'), groupPointsReason: document.getElementById('group-points-reason'), pointsModal: document.getElementById('points-modal'), pointsForm: document.getElementById('points-form'), pointsStudentName: document.getElementById('points-student-name'), pointsStudentIdInput: document.getElementById('points-student-id-input'), pointsChangeAmount: document.getElementById('points-change-amount'), pointsChangeReason: document.getElementById('points-change-reason'),
             allPointsModal: document.getElementById('all-points-modal'), allPointsForm: document.getElementById('all-points-form'), allPointsAmount: document.getElementById('all-points-amount'), allPointsReason: document.getElementById('all-points-reason'),
             searchInput: document.getElementById('search-input'), importFileInput: document.getElementById('import-file-input'),
             turntableCanvas: document.getElementById('turntable-canvas'), turntableCostInput: document.getElementById('turntable-cost-input'),
@@ -1190,6 +1192,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // 切换或删除班级
             document.getElementById('class-list-container').addEventListener('click', App.handlers.handleClassListClick);
             // --- ⬆️ 新增结束 ⬆️ ---
+
+            // --- 新增：兑换奖品的全选/取消监听 ---
+            App.DOMElements.btnRedeemSelectAll.addEventListener('click', (e) => {
+                e.preventDefault();
+                const checkboxes = App.DOMElements.redeemStudentCheckboxContainer.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = true);
+            });
+            App.DOMElements.btnRedeemDeselectAll.addEventListener('click', (e) => {
+                e.preventDefault();
+                const checkboxes = App.DOMElements.redeemStudentCheckboxContainer.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = false);
+            });
+
         },
 
         // --- 重构：Handlers ---
@@ -1394,7 +1409,39 @@ document.addEventListener('DOMContentLoaded', () => {
             //handleStudentFormSubmit: (e) => { e.preventDefault(); const id = App.DOMElements.studentIdInput.value; const name = App.DOMElements.studentNameInput.value.trim(); const group = App.DOMElements.studentGroupSelect.value; if (!name) { App.ui.showNotification('请输入学生姓名！', 'error'); return; } const result = id ? App.actions.updateStudent(id, name, group) : App.actions.addStudent(name, group); if (result.success) { App.ui.showNotification(id ? '学生信息已更新' : '学生添加成功'); App.ui.closeModal(App.DOMElements.studentModal); App.render(); } else { App.ui.showNotification(result.message, 'error'); } },
             handleGroupFormSubmit: (e) => { e.preventDefault(); const id = App.DOMElements.groupIdInput.value; const name = App.DOMElements.groupNameInput.value.trim(); if (!name) { App.ui.showNotification('请输入小组名称！', 'error'); return; } const result = id ? App.actions.updateGroup(id, name) : App.actions.addGroup(name); if (result.success) { App.ui.showNotification(id ? '小组信息已更新' : '小组添加成功'); App.ui.closeModal(App.DOMElements.groupModal); App.render(); } else { App.ui.showNotification(result.message, 'error'); } },
             handleRewardFormSubmit: (e) => { e.preventDefault(); const id = App.DOMElements.rewardIdInput.value; const name = App.DOMElements.rewardNameInput.value.trim(); const cost = App.DOMElements.rewardCostInput.value; if (!name || !cost || cost < 1) { App.ui.showNotification('请填写有效的奖品名称和积分！', 'error'); return; } const result = id ? App.actions.updateReward(id, name, cost) : App.actions.addReward(name, cost); if (result.success) { App.ui.showNotification(id ? '奖品信息已更新' : '奖品上架成功'); App.ui.closeModal(App.DOMElements.rewardModal); App.render(); } },
-            handleRedeemFormSubmit: (e) => { e.preventDefault(); const studentId = App.DOMElements.redeemStudentSelect.value; const rewardId = App.DOMElements.redeemRewardIdInput.value; if (!studentId) { App.ui.showNotification('请选择一个学生！', 'error'); return; } const result = App.actions.redeemReward(studentId, rewardId); if (result.success) { const studentName = App.state.students.find(s => s.id === studentId).name; const rewardName = App.state.rewards.find(r => r.id === rewardId).name; App.ui.showNotification(`${studentName} 成功兑换 ${rewardName}！`); App.ui.closeModal(App.DOMElements.redeemModal); App.render(); } else { App.ui.showNotification(result.message, 'error'); } },
+            handleRedeemFormSubmit: (e) => {
+                e.preventDefault();
+                const rewardId = App.DOMElements.redeemRewardIdInput.value;
+                const reward = App.state.rewards.find(r => r.id === rewardId);
+
+                // 获取所有被选中的学生ID
+                const checkboxes = App.DOMElements.redeemStudentCheckboxContainer.querySelectorAll('input[name="redeem-student-ids"]:checked');
+                const selectedStudentIds = Array.from(checkboxes).map(cb => cb.value);
+
+                if (selectedStudentIds.length === 0) {
+                    App.ui.showNotification('请至少选择一位学生！', 'error');
+                    return;
+                }
+
+                let successCount = 0;
+
+                // 遍历执行兑换
+                selectedStudentIds.forEach(studentId => {
+                    const result = App.actions.redeemReward(studentId, rewardId);
+                    if (result.success) {
+                        successCount++;
+                    }
+                });
+
+                if (successCount > 0) {
+                    App.ui.showNotification(`成功为 ${successCount} 名学生兑换了【${reward.name}】！`);
+                    App.ui.closeModal(App.DOMElements.redeemModal);
+                    App.render(); // 刷新界面更新积分
+                } else {
+                    App.ui.showNotification('兑换失败，可能是积分不足。', 'error');
+                }
+            },
+
             handleGroupPointsFormSubmit: (e) => { e.preventDefault(); const groupId = App.DOMElements.groupPointsSelect.value; const points = App.DOMElements.groupPointsAmount.value; const reason = App.DOMElements.groupPointsReason.value.trim(); if (!groupId || !points || !reason || parseInt(points) === 0) { App.ui.showNotification('请填写所有有效字段！', 'error'); return; } const result = App.actions.addGroupPoints(groupId, parseInt(points), reason); if (result.success) { const groupName = App.state.groups.find(g => g.id === groupId)?.name; App.ui.showNotification(`已成功为【${groupName}】小组加分`); App.ui.closeModal(App.DOMElements.groupPointsModal); App.render(); } else { App.ui.showNotification(result.message, 'error'); } },
             handleAllPointsFormSubmit: (e) => { e.preventDefault(); const amount = App.DOMElements.allPointsAmount.value; const reason = App.DOMElements.allPointsReason.value.trim(); if (!amount || parseInt(amount) === 0 || !reason) { App.ui.showNotification('请填写有效的分数和原因！', 'error'); return; } const result = App.actions.addAllPoints(parseInt(amount), reason); if (result.success) { App.ui.showNotification('已成功为全班成员调整积分'); App.ui.closeModal(App.DOMElements.allPointsModal); App.render(); } else { App.ui.showNotification(result.message, 'error'); } },
             handlePointsFormSubmit: (e) => { e.preventDefault(); const studentId = App.DOMElements.pointsStudentIdInput.value; const amount = App.DOMElements.pointsChangeAmount.value; const reason = App.DOMElements.pointsChangeReason.value.trim(); if (!amount || parseInt(amount) === 0 || !reason) { App.ui.showNotification('请填写有效的分数和原因！', 'error'); return; } const result = App.actions.changePoints(studentId, parseInt(amount), reason); if (result.success) { App.ui.showNotification('积分调整成功'); App.ui.closeModal(App.DOMElements.pointsModal); App.render(); } else { App.ui.showNotification(result.message, 'error'); } },
@@ -1456,7 +1503,43 @@ document.addEventListener('DOMContentLoaded', () => {
             //openStudentModal: (id = null) => { App.DOMElements.studentForm.reset(); App.DOMElements.studentIdInput.value = id || ''; const s = App.DOMElements.studentGroupSelect; s.innerHTML = '<option value="">未分组</option>'; App.state.groups.forEach(g => { const o = document.createElement('option'); o.value = g.id; o.text = g.name; s.add(o) }); if (id) { const t = App.state.students.find(st => st.id === id); App.DOMElements.studentNameInput.value = t.name; s.value = t.group; App.DOMElements.studentModalTitle.innerText = '编辑学生' } else App.DOMElements.studentModalTitle.innerText = '新增学生'; App.ui.openModal(App.DOMElements.studentModal); },
             openGroupModal: (id = null) => { App.DOMElements.groupForm.reset(); App.DOMElements.groupIdInput.value = id || ''; if (id) { const g = App.state.groups.find(gr => gr.id === id); App.DOMElements.groupNameInput.value = g.name; App.DOMElements.groupModal.querySelector('h2').innerText = '编辑小组' } else App.DOMElements.groupModal.querySelector('h2').innerText = '新增小组'; App.ui.openModal(App.DOMElements.groupModal); },
             openRewardModal: (id = null) => { App.DOMElements.rewardForm.reset(); App.DOMElements.rewardIdInput.value = id || ''; if (id) { const r = App.state.rewards.find(r => r.id === id); App.DOMElements.rewardModalTitle.innerText = '编辑奖品'; App.DOMElements.rewardNameInput.value = r.name; App.DOMElements.rewardCostInput.value = r.cost } else App.DOMElements.rewardModalTitle.innerText = '上架新奖品'; App.ui.openModal(App.DOMElements.rewardModal); },
-            openRedeemModal: (rId) => { const r = App.state.rewards.find(r => r.id === rId); if (!r) return; App.DOMElements.redeemRewardIdInput.value = rId; App.DOMElements.redeemRewardName.innerText = r.name; App.DOMElements.redeemRewardCost.innerText = r.cost; const s = App.DOMElements.redeemStudentSelect; s.innerHTML = '<option value="">-- 选择学生 --</option>'; App.state.students.filter(st => st.points >= r.cost).forEach(st => { const o = document.createElement('option'); o.value = st.id; o.innerText = `${st.name} (当前 ${st.points} 积分)`; s.add(o) }); App.ui.openModal(App.DOMElements.redeemModal); },
+            openRedeemModal: (rId) => {
+                const r = App.state.rewards.find(r => r.id === rId);
+                if (!r) return;
+
+                // 填充基本信息
+                App.DOMElements.redeemRewardIdInput.value = rId;
+                App.DOMElements.redeemRewardName.innerText = r.name;
+                App.DOMElements.redeemRewardCost.innerText = r.cost;
+
+                // 获取容器并清空
+                const container = App.DOMElements.redeemStudentCheckboxContainer;
+                container.innerHTML = '';
+
+                // 筛选出积分足够的学生
+                const eligibleStudents = App.state.students.filter(st => st.points >= r.cost);
+
+                if (eligibleStudents.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#666;">班级里暂时没有学生拥有足够的积分兑换此奖品。</p>';
+                } else {
+                    // 按姓名排序并生成复选框
+                    eligibleStudents
+                        .sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hans-CN'))
+                        .forEach(st => {
+                            const checkboxDiv = document.createElement('div');
+                            checkboxDiv.className = 'checkbox-item';
+                            checkboxDiv.innerHTML = `
+                    <input type="checkbox" id="redeem-student-${st.id}" name="redeem-student-ids" value="${st.id}">
+                    <label for="redeem-student-${st.id}">
+                        ${st.name} <span style="font-size:0.85em; color:#666;">(${st.points}分)</span>
+                    </label>
+                `;
+                            container.appendChild(checkboxDiv);
+                        });
+                }
+
+                App.ui.openModal(App.DOMElements.redeemModal);
+            },
 
             openGroupPointsModal() {
                 App.DOMElements.groupPointsForm.reset();

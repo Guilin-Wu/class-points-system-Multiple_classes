@@ -416,8 +416,13 @@
           <p><strong>奖品:</strong> <span id="redeem-reward-name"></span></p>
           <p><strong>花费:</strong> <span id="redeem-reward-cost"></span> 积分</p>
         </div>
-        <label for="redeem-student-select">选择兑换的学生:</label>
-        <select id="redeem-student-select" required></select>
+<label>选择兑换的学生 (仅显示积分足够的学生):</label>
+<div class="print-batch-actions" style="margin-top: 5px;">
+  <a href="#" id="btn-redeem-select-all">✅ 全选</a>
+  <a href="#" id="btn-redeem-deselect-all" style="margin-left: 15px;">⬜ 取消</a>
+</div>
+<div id="redeem-student-checkbox-container" class="student-checkbox-container" style="max-height: 200px;">
+  </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">确认兑换</button>
         </div>
