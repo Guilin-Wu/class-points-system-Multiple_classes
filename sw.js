@@ -3,7 +3,7 @@
  * 提供离线访问和更快的加载速度
  */
 
-const CACHE_NAME = 'class-points-v1.0.2';
+const CACHE_NAME = 'class-points-v1.0.1';
 const STATIC_CACHE = 'static-v1.0.1';
 const DYNAMIC_CACHE = 'dynamic-v1.0.1';
 
