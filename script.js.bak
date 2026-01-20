@@ -320,12 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     scopeText.textContent = `所有班级（共${App.classList.length}个班级）`;
                 }
-            },
-            renderClassList() {
-                // 调用 render.classList 方法
-                if (App["render.classList"]) {
-                    App["render.classList"]();
-                }
             }
         },
 
@@ -1291,15 +1285,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (err) {
                         console.error("Excel Import Error:", err);
                         App.ui.showNotification('❌ 导入失败：Excel文件解析错误。', 'error');
+                            if (row.name && String(row.name).trim() !== '') {
+                                newStudents.push({
+                                    id: String(row.id || App.actions.generateId()),
+                                    name: String(row.name).trim(),
+                                    group: String(row.group || ''),
+                                    points: parseInt(row.points || 0),
+                                    totalEarnedPoints: parseInt(row.totalEarnedPoints || row.points || 0),
+                                    totalDeductions: parseInt(row.totalDeductions || 0)
+                                });
+                            }
+
+                            // 如果行中有小组ID和小组名，则更新到Map中
+                            // 这会覆盖旧的名称，实现“更新”效果
+                            if (row.group && row.groupName) {
+                                groupsMap.set(String(row.group), String(row.groupName));
+                            }
+                        });
+
+                        // 2. 将Map转换回小组数组格式
+                        const newGroups = [];
+                        groupsMap.forEach((name, id) => {
+                            newGroups.push({ id, name });
+                        });
+
+                        // 3. 同时更新学生和小组列表
+                        App.state.students = newStudents;
+                        App.state.groups = newGroups;
+                        // --- 核心修改结束 ---
+
+                        App.saveData();
+                        App.render();
+
+                        App.ui.showNotification(`成功从Excel导入 ${newStudents.length} 名学生和 ${newGroups.length} 个小组的信息！`);
+
+                    } catch (err) {
+                        console.error("Excel Import Error:", err);
+                        App.ui.showNotification('导入失败：Excel文件解析错误。', 'error');
                     }
                 };
                 reader.readAsArrayBuffer(file);
             } else {
-                App.ui.showNotification('❌ 不支持的文件格式！请选择.json, .xlsx或.xls文件。', 'error');
+                App.ui.showNotification('不支持的文件格式！请选择.json, .xlsx或.xls文件。', 'error');
             }
 
             e.target.value = '';
         },
+        //importData: (e) => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (event) => { try { const d = JSON.parse(event.target.result); const ds = { students: [], groups: [], rewards: [], records: [], sortState: { column: 'id', direction: 'asc' }, leaderboardType: 'realtime', turntablePrizes: [], turntableCost: 10 }; let s = false; if (Array.isArray(d)) { const nS = d.map(st => ({ id: String(st.id || st["id (学生ID)"]), name: st.name || st["name (姓名)"], group: st.group || st["group_id (小组ID)"] || "", points: parseInt(st.points || st["points (初始积分)"]) || 0, totalEarnedPoints: parseInt(st.points || st["points (初始积分)"]) || 0 })); App.state.students = nS; s = true; } else if (d.students && d.groups) { if (d.students) { d.students.forEach(student => { if (student.totalEarnedPoints === undefined) { student.totalEarnedPoints = student.points > 0 ? student.points : 0; } }); } App.state = { ...ds, ...d }; s = true; } if (s) { App.saveData(); App.render(); App.ui.showNotification('数据导入成功！'); } else { App.ui.showNotification('导入失败：文件格式不正确。', 'error'); } } catch (err) { console.error("Import Error:", err); App.ui.showNotification('导入失败：文件解析错误。', 'error'); } }; r.readAsText(f); e.target.value = ''; },
 
         setupEventListeners() {
             // 页面导航
@@ -1530,19 +1562,11 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             // ========== 在 script.js 中，用下面这个最终优化版的代码块，完整替换掉旧的 handleNavClick 函数 ==========
             handleNavClick: (e) => {
-                if (!e.currentTarget) return;
                 const v = e.currentTarget.dataset.view;
-                if (App.DOMElements.navItems) {
-                    App.DOMElements.navItems.forEach(i => i.classList.remove('active'));
-                }
+                App.DOMElements.navItems.forEach(i => i.classList.remove('active'));
                 e.currentTarget.classList.add('active');
-                if (App.DOMElements.views) {
-                    App.DOMElements.views.forEach(v => v.classList.remove('active'));
-                }
-                const viewElement = document.getElementById(`view-${v}`);
-                if (viewElement) {
-                    viewElement.classList.add('active');
-                }
+                App.DOMElements.views.forEach(v => v.classList.remove('active'));
+                document.getElementById(`view-${v}`).classList.add('active');
 
                 // 如果用户点击的是“幸运大转盘”，则进行初始化
                 if (v === 'turntable') {
