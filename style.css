@@ -35,7 +35,6 @@ header {
   grid-area: header;
   background: var(--card-background);
   padding: 0 30px;
-  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -370,8 +369,6 @@ form input:focus, form select:focus {
   margin-bottom: 20px;
   font-size: 1.4em;
   text-align: center;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 15px;
 }
 
 /* --- 修改点: 同时选中两个排行榜的 ol 元素 --- */
