@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
         dataKeyPrefix: 'classPointsData_',  // 存储每个班级数据的Key前缀
         classList: [],       // 班级列表 {id, name}
         currentClassId: null, // 当前激活的班级ID
+        
+        // 导出范围状态
+        exportScope: 'current', // 'current' 或 'all'
 
         state: {
             students: [],
@@ -88,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
             exportChoiceModal: document.getElementById('export-choice-modal'),
             btnExportChoiceJson: document.getElementById('btn-export-choice-json'),
             btnExportChoiceExcel: document.getElementById('btn-export-choice-excel'),
+            btnExportScopeCurrent: document.getElementById('btn-export-scope-current'),
+            btnExportScopeAll: document.getElementById('btn-export-scope-all'),
+            exportScopeText: document.getElementById('export-scope-text'),
 
             quickReasonModal: document.getElementById('quick-reason-modal'),
             quickReasonForm: document.getElementById('quick-reason-form'),
@@ -116,6 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
             btnClearPointsOnly: document.getElementById('btn-clear-points-only'),
             btnClearSettings: document.getElementById('btn-clear-settings'),
             btnClearAll: document.getElementById('btn-clear-all'),
+
+            aboutAuthorModal: document.getElementById('about-author-modal'),
+            navAboutAuthor: document.getElementById('nav-about-author'),
 
         },
 
@@ -288,6 +297,29 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             closeModal(modalElement) {
                 modalElement.classList.remove('active');
+            },
+            updateExportScopeUI() {
+                // 更新按钮样式
+                const currentBtn = App.DOMElements.btnExportScopeCurrent;
+                const allBtn = App.DOMElements.btnExportScopeAll;
+                const scopeText = App.DOMElements.exportScopeText;
+                
+                if (App.exportScope === 'current') {
+                    currentBtn.classList.add('btn-primary');
+                    currentBtn.classList.remove('btn-secondary');
+                    allBtn.classList.remove('btn-purple');
+                    allBtn.classList.add('btn-secondary');
+                    
+                    const currentClassName = App.classList.find(c => c.id === App.currentClassId)?.name || '当前班级';
+                    scopeText.textContent = `仅当前班级（${currentClassName}）`;
+                } else {
+                    currentBtn.classList.remove('btn-primary');
+                    currentBtn.classList.add('btn-secondary');
+                    allBtn.classList.add('btn-purple');
+                    allBtn.classList.remove('btn-secondary');
+                    
+                    scopeText.textContent = `所有班级（共${App.classList.length}个班级）`;
+                }
             }
         },
 
@@ -874,47 +906,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 将旧的 exportData 函数替换为这两个
         exportDataJSON: () => {
-            const d = JSON.stringify(App.state, null, 2);
-            const b = new Blob([d], { type: 'application/json' });
+            let dataToExport;
+            let fileName;
+            
+            if (App.exportScope === 'all') {
+                // 导出所有班级数据
+                const allClassesData = {
+                    exportType: 'all_classes',
+                    exportDate: new Date().toISOString(),
+                    classList: App.classList,
+                    classesData: {}
+                };
+                
+                // 遍历所有班级，收集数据
+                App.classList.forEach(classInfo => {
+                    const dataKey = App.dataKeyPrefix + classInfo.id;
+                    const classData = localStorage.getItem(dataKey);
+                    if (classData) {
+                        allClassesData.classesData[classInfo.id] = {
+                            className: classInfo.name,
+                            data: JSON.parse(classData)
+                        };
+                    }
+                });
+                
+                dataToExport = JSON.stringify(allClassesData, null, 2);
+                fileName = `all_classes_data_${new Date().toISOString().slice(0, 10)}.json`;
+            } else {
+                // 仅导出当前班级数据
+                const currentClassName = App.classList.find(c => c.id === App.currentClassId)?.name || '未知班级';
+                dataToExport = JSON.stringify({
+                    exportType: 'single_class',
+                    exportDate: new Date().toISOString(),
+                    className: currentClassName,
+                    classId: App.currentClassId,
+                    data: App.state
+                }, null, 2);
+                fileName = `${currentClassName}_data_${new Date().toISOString().slice(0, 10)}.json`;
+            }
+            
+            const b = new Blob([dataToExport], { type: 'application/json' });
             const u = URL.createObjectURL(b);
             const a = document.createElement('a');
             a.href = u;
-            a.download = `class_data_${new Date().toISOString().slice(0, 10)}.json`;
+            a.download = fileName;
             a.click();
             URL.revokeObjectURL(u);
+            
+            App.ui.showNotification(`✅ 数据已导出：${fileName}`, 'success');
         },
 
         exportDataExcel: () => {
-            const studentsForExport = App.state.students.map(s => {
-                const group = App.state.groups.find(g => g.id === s.group);
-                return {
-                    id: s.id,
-                    name: s.name,
-                    group: s.group, // 保留group id用于精确导入
-                    groupName: group ? group.name : '未分组', // 额外提供小组名称方便查看
-                    points: s.points,
-                    totalEarnedPoints: s.totalEarnedPoints || 0,
-                    totalDeductions: s.totalDeductions || 0
-                };
-            });
-
-            const worksheet = XLSX.utils.json_to_sheet(studentsForExport);
-
-            // 设置列宽以优化可读性
-            worksheet['!cols'] = [
-                { wch: 15 }, // id
-                { wch: 15 }, // name
-                { wch: 20 }, // group (ID)
-                { wch: 15 }, // groupName
-                { wch: 10 }, // points
-                { wch: 15 }, // totalEarnedPoints
-                { wch: 15 }  // totalDeductions
-            ];
-
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+            let fileName;
+            
+            if (App.exportScope === 'all') {
+                // 导出所有班级数据到不同的工作表
+                App.classList.forEach(classInfo => {
+                    const dataKey = App.dataKeyPrefix + classInfo.id;
+                    const classDataStr = localStorage.getItem(dataKey);
+                    
+                    if (classDataStr) {
+                        const classData = JSON.parse(classDataStr);
+                        const studentsForExport = (classData.students || []).map(s => {
+                            const group = (classData.groups || []).find(g => g.id === s.group);
+                            return {
+                                学号: s.id,
+                                姓名: s.name,
+                                小组ID: s.group,
+                                小组名称: group ? group.name : '未分组',
+                                当前积分: s.points,
+                                累计获得: s.totalEarnedPoints || 0,
+                                累计扣除: s.totalDeductions || 0
+                            };
+                        });
+                        
+                        const worksheet = XLSX.utils.json_to_sheet(studentsForExport);
+                        // 设置列宽
+                        worksheet['!cols'] = [
+                            { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 },
+                            { wch: 10 }, { wch: 15 }, { wch: 15 }
+                        ];
+                        
+                        // 使用班级名称作为工作表名（Excel工作表名限制31字符）
+                        const sheetName = classInfo.name.substring(0, 31);
+                        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+                    }
+                });
+                
+                fileName = `all_classes_data_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            } else {
+                // 仅导出当前班级数据
+                const studentsForExport = App.state.students.map(s => {
+                    const group = App.state.groups.find(g => g.id === s.group);
+                    return {
+                        学号: s.id,
+                        姓名: s.name,
+                        小组ID: s.group,
+                        小组名称: group ? group.name : '未分组',
+                        当前积分: s.points,
+                        累计获得: s.totalEarnedPoints || 0,
+                        累计扣除: s.totalDeductions || 0
+                    };
+                });
 
-            XLSX.writeFile(workbook, `class_students_data_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                const worksheet = XLSX.utils.json_to_sheet(studentsForExport);
+                worksheet['!cols'] = [
+                    { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 },
+                    { wch: 10 }, { wch: 15 }, { wch: 15 }
+                ];
+
+                const currentClassName = App.classList.find(c => c.id === App.currentClassId)?.name || '未知班级';
+                XLSX.utils.book_append_sheet(workbook, worksheet, currentClassName.substring(0, 31));
+                fileName = `${currentClassName}_data_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            }
+
+            XLSX.writeFile(workbook, fileName);
+            App.ui.showNotification(`✅ 数据已导出：${fileName}`, 'success');
         },
 
         importData: (e) => {
@@ -1079,7 +1187,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 1. “导出数据”按钮只负责打开选择模态框
             document.getElementById('btn-export-data').addEventListener('click', () => {
+                // 打开模态框时，默认选择当前班级
+                App.exportScope = 'current';
+                App.ui.updateExportScopeUI();
                 App.ui.openModal(App.DOMElements.exportChoiceModal);
+            });
+
+            // 导出范围选择按钮
+            App.DOMElements.btnExportScopeCurrent.addEventListener('click', () => {
+                App.exportScope = 'current';
+                App.ui.updateExportScopeUI();
+            });
+
+            App.DOMElements.btnExportScopeAll.addEventListener('click', () => {
+                App.exportScope = 'all';
+                App.ui.updateExportScopeUI();
             });
 
             // 2. 模态框内的“导出JSON”按钮负责执行JSON导出并关闭模态框
@@ -1133,6 +1255,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+
+            // 关于作者按钮
+            App.DOMElements.navAboutAuthor.addEventListener('click', () => {
+                App.ui.openModal(App.DOMElements.aboutAuthorModal);
+            });
+
             // --- 其他监听器 ---
             App.DOMElements.searchInput.addEventListener('input', e => App.render.dashboard(e.target.value));
             App.DOMElements.dashboardSortControls.addEventListener('click', e => App.handlers.handleDashboardSortClick(e));
